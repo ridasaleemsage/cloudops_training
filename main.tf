@@ -10,18 +10,18 @@ resource "aws_vpc" "webapp" {
     }
   )
 }
-
 resource "aws_subnet" "public" {
-  for_each                = { for idx, subnet in var.public_subnets : subnet => data.aws_availability_zones.available.names[idx % length(data.aws_availability_zones.available.names)] }
-  cidr_block              = each.key
-  availability_zone       = each.value
+  for_each = toset(var.public_subnets)
+
+  cidr_block              = each.value
+  availability_zone       = element(data.aws_availability_zones.available.names, index(var.public_subnets, each.value))
   vpc_id                  = aws_vpc.webapp.id
   map_public_ip_on_launch = true
 
   tags = merge(
     local.base_tags,
     {
-      Name = "public-${each.key}"
+      Name = "public-${each.value}"
     }
   )
 }
@@ -61,16 +61,16 @@ resource "aws_route_table_association" "public" {
 }
 
 resource "aws_subnet" "private" {
-  for_each = { for idx, subnet in var.private_subnets : subnet => data.aws_availability_zones.available.names[idx % length(data.aws_availability_zones.available.names)] }
+  for_each = toset(var.private_subnets)
 
-  cidr_block        = each.key
-  availability_zone = each.value
+  cidr_block        = each.value
+  availability_zone = element(data.aws_availability_zones.available.names, index(var.private_subnets, each.value))
   vpc_id            = aws_vpc.webapp.id
 
   tags = merge(
     local.base_tags,
     {
-      Name = "private-${each.key}"
+      Name = "private-${each.value}"
     }
   )
 }
