@@ -79,10 +79,10 @@ resource "aws_eip" "private" {
   for_each = aws_subnet.public
   domain   = "vpc"
   tags = merge(
-    local.base_tags
-    # {
-    #   Name = "${local.name}-${each.value.id}"
-    # }
+    local.base_tags,
+    {
+      Name = "${local.name}-${each.value.availability_zone}"
+    }
   )
 }
 
