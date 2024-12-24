@@ -8,6 +8,6 @@ terraform {
 }
 
 provider "aws" {
-  profile = "terraform-test"
+  profile = "enplat-dev-admin"
   region  = local.region
 }
