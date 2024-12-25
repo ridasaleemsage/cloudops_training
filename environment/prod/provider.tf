@@ -9,5 +9,5 @@ terraform {
 
 provider "aws" {
   profile = "enplat-dev-admin"
-  region  = local.region
+  region  = var.aws_region
 }
