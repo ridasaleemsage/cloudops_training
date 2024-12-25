@@ -36,3 +36,6 @@ environment/staging/.terraform.lock.hcl
 # Ignore CLI configuration files
 .terraformrc
 terraform.rc
+
+# Ignore .DS_Store files
+.DS_Store
