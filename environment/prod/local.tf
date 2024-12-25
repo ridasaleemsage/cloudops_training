@@ -10,8 +10,5 @@ locals {
     Region      = local.region
   }
 
-  # Create a map of route table IDs keyed by the "AZ" tag
-  route_table_map = {
-    for id, rt in aws_route_table.private : rt.tags.AZ => rt.id
-  }
+  route_table_map = {for id, rt in aws_route_table.private : rt.tags.AZ => rt.id}
 }

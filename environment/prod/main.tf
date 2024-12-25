@@ -76,7 +76,6 @@ resource "aws_subnet" "private" {
     {
       Name = "${local.name_prefix}.private.${each.value}.sn",
       AZ   = element(data.aws_availability_zones.available.names, index(var.private_subnets, each.value))
-
     }
   )
 }
