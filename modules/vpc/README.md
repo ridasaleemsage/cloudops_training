@@ -1,5 +1,3 @@
-
-```markdown
 # VPC Module
 
 This folder contains a Terraform module to deploy a Virtual Private Cloud (VPC) in AWS. This module is designed to create a foundational network environment for your cloud infrastructure by managing subnets, route tables, internet gateways, NAT gateways, and related components.
@@ -74,8 +72,4 @@ This module is designed to work across different environments. Here's an example
 │   │   ├── main.tf
 │   │   ├── variables.tf
 │   │   ├── outputs.tf
-```
-
-
-
 ```
