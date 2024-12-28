@@ -31,7 +31,7 @@ module "vpc" {
 
 ### Key Input Parameters
 
-* `source`: Specifies the URL of this module. Use the `//` syntax to target the subfolder containing this module.  
+* `source`: Specifies the URL of this module. Use the `//` syntax to target the subfolder containing this module incase of URL.  
 * `cidr`: Defines the CIDR block for the VPC.  
 * `environment`: Indicates the environment for this VPC, such as `production`, `staging`, or `development`.  
 * `public_subnets` & `private_subnets`: CIDR blocks for public and private subnets.  
