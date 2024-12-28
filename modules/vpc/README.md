@@ -11,7 +11,7 @@ This folder defines a [Terraform module](https://www.terraform.io/docs/modules/u
 ```hcl
 module "vpc" {
   # TODO: Update the source URL or local source
-  source = "github.com/your-repo-name/terraform-aws-vpc//modules/vpc"
+  source = "../../modules/vpc"
 
   # VPC setup
   cidr                 = "10.0.0.0/16"
@@ -23,8 +23,8 @@ module "vpc" {
   private_subnets = ["10.0.3.0/24", "10.0.4.0/24"]
 
   # Tags for resources
-  app_name        = "production-vpc"
-  environment = "production"
+  app_name        = "prod-vpc"
+  environment     = "prod"
   aws_region      = "eu-west-1"
 }
 ```
@@ -62,14 +62,18 @@ This module is designed to work across different environments. Here's an example
 │   ├── prod/
 │   │   ├── main.tf
 │   │   ├── variables.tf
-│   │   ├── terraform.tfvars
+│   │   ├── local.tf
+│   │   ├── provider.tf
 │   ├── staging/
 │   │   ├── main.tf
 │   │   ├── variables.tf
-│   │   ├── terraform.tfvars
+│   │   ├── local.tf
+│   │   ├── provider.tf
 ├── modules/
 │   ├── vpc/
 │   │   ├── main.tf
 │   │   ├── variables.tf
 │   │   ├── outputs.tf
+│   │   ├── local.tf
+│   │   ├── data.tf
 ```
