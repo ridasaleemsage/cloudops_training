@@ -1,6 +1,6 @@
 locals {
   name        = var.app_name
-  environment = "prod"
+  environment = var.environment
   region      = var.aws_region
   name_prefix = "${local.name}.${local.environment}"
 
@@ -10,5 +10,5 @@ locals {
     Region      = local.region
   }
 
-  route_table_map = {for id, rt in aws_route_table.private : rt.tags.AZ => rt.id}
+  route_table_map = { for id, rt in aws_route_table.private : rt.tags.AZ => rt.id }
 }

@@ -1,8 +1,14 @@
 # Local .terraform directories
 **/.terraform/*
 
-# Ignore .DS_Store files
+# OS X files
+.history
 .DS_Store
+
+# Terraform files
+.terraform
+terraform.tfstate
+terraform.tfvars
 
 # .tfstate files
 *.tfstate
@@ -29,7 +35,6 @@ override.tf.json
 # Ignore transient lock info files created by terraform apply
 .terraform.tfstate.lock.info
 .terraform.lock.hcl
-environment/staging/.terraform.lock.hcl
 # Include override files you do wish to add to version control using negated pattern
 # !example_override.tf
 
