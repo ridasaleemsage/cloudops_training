@@ -10,5 +10,6 @@ locals {
     Region      = local.region
   }
 
+  # Creates a map of route table IDs keyed by their availability zone (AZ) tags
   route_table_map = { for id, rt in aws_route_table.private : rt.tags.AZ => rt.id }
 }
