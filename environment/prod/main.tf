@@ -5,7 +5,9 @@ resource "aws_vpc" "webapp" {
 
   tags = merge(
     local.base_tags,
-    {
+    { 
+      # Check - This nested replace function is used if punctuations need to be removed in names or tags.
+      # It replaces hyphens, underscores, spaces, and slashes with dots.
       Name = replace(replace(replace(replace("${local.name_prefix}-vpc", "-", "."), "_", "."), " ", "."), "/", ".")
     }
   )
