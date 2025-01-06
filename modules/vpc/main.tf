@@ -6,7 +6,7 @@ resource "aws_vpc" "webapp" {
   tags = merge(
     local.base_tags,
     {
-      Name = replace("${local.name_prefix}.vpc", "/", ".")
+    Name = replace(replace(replace(replace("${local.name_prefix}-vpc", "-", "."), "_", "."), " ", "."), "/", ".")
     }
   )
 }
@@ -24,7 +24,7 @@ resource "aws_subnet" "public" {
   tags = merge(
     local.base_tags,
     {
-      Name = replace("${local.name_prefix}.public.${each.value}.sn", "/", ".")
+      Name = "${local.name_prefix}.public.${each.value}.sn"
       AZ   = element(data.aws_availability_zones.available.names, index(var.public_subnets, each.value))
     }
   )

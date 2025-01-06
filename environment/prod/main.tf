@@ -1,13 +1,13 @@
 module "vpc" {
   source = "../../modules/vpc"
 
-  aws_region  = var.aws_region
-  app_name    = var.app_name
+  aws_region  = local.region
+  app_name    = local.name
   environment = "prod"
 
-  cidr                 = var.cidr
-  public_subnets       = var.public_subnets
-  private_subnets      = var.private_subnets
-  enable_dns_support   = var.enable_dns_support
-  enable_dns_hostnames = var.enable_dns_hostnames
+  cidr                 = local.cidr
+  public_subnets       = local.public_subnets
+  private_subnets      = local.private_subnets
+  enable_dns_support   = true
+  enable_dns_hostnames = true
 }
