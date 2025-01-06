@@ -6,7 +6,7 @@ resource "aws_vpc" "webapp" {
   tags = merge(
     local.base_tags,
     {
-      Name = replace("${local.name_prefix}.vpc", "[/]", ".")
+      Name = replace(replace(replace(replace("${local.name_prefix}-vpc", "-", "."), "_", "."), " ", "."), "/", ".")
     }
   )
 }

@@ -1,31 +1,31 @@
 resource "aws_vpc" "webapp" {
-  cidr_block           = var.cidr
-  enable_dns_support   = var.enable_dns_support
-  enable_dns_hostnames = var.enable_dns_hostnames
+  cidr_block           = local.cidr
+  enable_dns_support   = true
+  enable_dns_hostnames = true
 
   tags = merge(
     local.base_tags,
     {
-      Name = replace("${local.name_prefix}.vpc", "[/]", ".")
+      Name = replace(replace(replace(replace("${local.name_prefix}-vpc", "-", "."), "_", "."), " ", "."), "/", ".")
     }
   )
 }
 
 resource "aws_subnet" "public" {
-  for_each = toset(var.public_subnets)
+  for_each = toset(local.public_subnets)
 
   cidr_block = each.value
   # The `element` function is used to wrap around the number of public subnets to ensure that the code does not break even 
   # if the number of subnets exceeds the number of availability zones.
-  availability_zone       = element(data.aws_availability_zones.available.names, index(var.public_subnets, each.value))
+  availability_zone       = element(data.aws_availability_zones.available.names, index(local.public_subnets, each.value))
   vpc_id                  = aws_vpc.webapp.id
   map_public_ip_on_launch = true
 
   tags = merge(
     local.base_tags,
     {
-      Name = replace("${local.name_prefix}.public.${each.value}.sn", "[/]", ".")
-      AZ   = element(data.aws_availability_zones.available.names, index(var.public_subnets, each.value))
+      Name = "${local.name_prefix}.public.${each.value}.sn"
+      AZ   = element(data.aws_availability_zones.available.names, index(local.public_subnets, each.value))
     }
   )
 }
@@ -65,17 +65,17 @@ resource "aws_route_table_association" "public" {
 }
 
 resource "aws_subnet" "private" {
-  for_each = toset(var.private_subnets)
+  for_each = toset(local.private_subnets)
 
   cidr_block        = each.value
-  availability_zone = element(data.aws_availability_zones.available.names, index(var.private_subnets, each.value))
+  availability_zone = element(data.aws_availability_zones.available.names, index(local.private_subnets, each.value))
   vpc_id            = aws_vpc.webapp.id
 
   tags = merge(
     local.base_tags,
     {
       Name = "${local.name_prefix}.private.${each.value}.sn",
-      AZ   = element(data.aws_availability_zones.available.names, index(var.private_subnets, each.value))
+      AZ   = element(data.aws_availability_zones.available.names, index(local.private_subnets, each.value))
     }
   )
 }

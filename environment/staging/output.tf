@@ -1,3 +1,4 @@
 output "route_table_map" {
-  value = [for rt in local.route_table_map : rt]
+  description = "value of the route table map"
+  value       = [for rt in local.route_table_map : rt]
 }
