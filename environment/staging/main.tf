@@ -12,20 +12,18 @@ resource "aws_vpc" "webapp" {
 }
 
 resource "aws_subnet" "public" {
-  for_each = toset(local.public_subnets)
+  for_each = local.public_subnets_with_azs
 
-  cidr_block = each.value
-  # The `element` function is used to wrap around the number of public subnets to ensure that the code does not break even 
-  # if the number of subnets exceeds the number of availability zones.
-  availability_zone       = element(data.aws_availability_zones.available.names, index(local.public_subnets, each.value))
   vpc_id                  = aws_vpc.webapp.id
+  cidr_block              = each.key
+  availability_zone       = each.value
   map_public_ip_on_launch = true
 
   tags = merge(
     local.base_tags,
     {
       Name = "${local.name_prefix}-public-sn-${replace(replace(each.value, ".", "-"), "/", "-")}"
-      AZ   = element(data.aws_availability_zones.available.names, index(local.public_subnets, each.value))
+      AZ   = each.value
     }
   )
 }
@@ -65,44 +63,46 @@ resource "aws_route_table_association" "public" {
 }
 
 resource "aws_subnet" "private" {
-  for_each = toset(local.private_subnets)
+  for_each = local.private_subnets_with_azs
 
-  cidr_block        = each.value
-  availability_zone = element(data.aws_availability_zones.available.names, index(local.private_subnets, each.value))
   vpc_id            = aws_vpc.webapp.id
+  cidr_block        = each.key
+  availability_zone = each.value
 
   tags = merge(
     local.base_tags,
     {
       Name = "${local.name_prefix}-private-sn-${replace(replace(each.value, ".", "-"), "/", "-")}",
-      AZ   = element(data.aws_availability_zones.available.names, index(local.private_subnets, each.value))
+      AZ   = each.value
 
     }
   )
 }
 
-resource "aws_eip" "private" {
-  for_each = aws_subnet.public
-  domain   = "vpc"
+resource "aws_eip" "ngw" {
+  for_each = local.nat_gateways
+
+  domain = "vpc"
+
   tags = merge(
     local.base_tags,
     {
-      Name = "${local.name_prefix}-ngw-eip-${each.value.availability_zone_id}"
+      Name = "${local.name_prefix}-ngw-eip-${each.value.az}"
     }
   )
 }
 
 resource "aws_nat_gateway" "private" {
-  for_each = aws_subnet.public
+  for_each = local.nat_gateways
 
-  allocation_id = aws_eip.private[each.value.cidr_block].id
-  subnet_id     = each.value.id # Assuming you're associating it with a public subnet
+  allocation_id = aws_eip.ngw[each.key].id
+  subnet_id     = aws_subnet.public[each.value.public_cidr].id
 
   tags = merge(
     local.base_tags,
     {
-      Name = "${local.name_prefix}-ngw-${replace(aws_eip.private[each.value.cidr_block].public_ip, ".", "-")}",
-      AZ   = each.value.availability_zone
+      Name = "${local.name_prefix}-private-ngw-${each.key}",
+      AZ   = each.key
     }
   )
 
@@ -112,7 +112,8 @@ resource "aws_nat_gateway" "private" {
 
 resource "aws_route_table" "private" {
   for_each = aws_nat_gateway.private
-  vpc_id   = aws_vpc.webapp.id
+
+  vpc_id = aws_vpc.webapp.id
 
   route {
     cidr_block     = "0.0.0.0/0"
@@ -122,8 +123,8 @@ resource "aws_route_table" "private" {
   tags = merge(
     local.base_tags,
     {
-      Name = "${local.name_prefix}-private-nat-rt-${replace(each.value.public_ip, ".", "-")}",
-      AZ   = each.value.tags.AZ
+      Name = "${local.name_prefix}-private-rt-${local.nat_gateways[each.key].az}",
+      AZ   = local.nat_gateways[each.key].az
     }
   )
 }
@@ -131,10 +132,8 @@ resource "aws_route_table" "private" {
 resource "aws_route_table_association" "private" {
   for_each = aws_subnet.private
 
-  subnet_id = each.value.id
-
-  # Ensure both route tables and subnets share the same "Availablity Zone" tag 
-  route_table_id = lookup(local.route_table_map, each.value.tags["AZ"], null)
+  subnet_id      = each.value.id
+  route_table_id = aws_route_table.private[each.value.availability_zone].id
 
   # This prevents errors if a route table isn't found for a subnet
   depends_on = [aws_route_table.private]
