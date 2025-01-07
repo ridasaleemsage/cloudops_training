@@ -6,7 +6,7 @@ resource "aws_vpc" "webapp" {
   tags = merge(
     local.base_tags,
     {
-      Name = replace("${local.name_prefix}.vpc", "/", ".")
+      Name = "${local.name_prefix}-vpc"
     }
   )
 }
@@ -24,7 +24,7 @@ resource "aws_subnet" "public" {
   tags = merge(
     local.base_tags,
     {
-      Name = "${local.name_prefix}.public.${each.value}.sn"
+      Name = "${local.name_prefix}-public-sn-${replace(replace(each.value, ".", "-"), "/", "-")}"
       AZ   = element(data.aws_availability_zones.available.names, index(local.public_subnets, each.value))
     }
   )
@@ -36,7 +36,7 @@ resource "aws_internet_gateway" "public" {
   tags = merge(
     local.base_tags,
     {
-      Name = "${local.name_prefix}.${local.region}.igw"
+      Name = "${local.name_prefix}-igw-${local.region}"
     }
   )
 }
@@ -52,7 +52,7 @@ resource "aws_route_table" "public" {
   tags = merge(
     local.base_tags,
     {
-      Name = "${local.name_prefix}.public.${aws_internet_gateway.public.id}.rt"
+      Name = "${local.name_prefix}-public-rt"
     }
   )
 }
@@ -74,7 +74,7 @@ resource "aws_subnet" "private" {
   tags = merge(
     local.base_tags,
     {
-      Name = "${local.name_prefix}.private.${each.value}.sn",
+      Name = "${local.name_prefix}-private-sn-${replace(replace(each.value, ".", "-"), "/", "-")}",
       AZ   = element(data.aws_availability_zones.available.names, index(local.private_subnets, each.value))
 
     }
@@ -87,7 +87,7 @@ resource "aws_eip" "private" {
   tags = merge(
     local.base_tags,
     {
-      Name = "${local.name_prefix}.${each.value.availability_zone_id}.ngw.eip"
+      Name = "${local.name_prefix}-ngw-eip-${each.value.availability_zone_id}"
     }
   )
 }
@@ -101,8 +101,8 @@ resource "aws_nat_gateway" "private" {
   tags = merge(
     local.base_tags,
     {
-      Name = "${local.name_prefix}.${aws_eip.private[each.value.cidr_block].public_ip}.ngw",
-      AZ   = "${each.value.availability_zone}"
+      Name = "${local.name_prefix}-ngw-${replace(aws_eip.private[each.value.cidr_block].public_ip, ".", "-")}",
+      AZ   = each.value.availability_zone
     }
   )
 
@@ -122,8 +122,8 @@ resource "aws_route_table" "private" {
   tags = merge(
     local.base_tags,
     {
-      Name = "${local.name_prefix}.private.nat.${each.value.public_ip}.rt",
-      AZ   = "${each.value.tags.AZ}"
+      Name = "${local.name_prefix}-private-nat-rt-${replace(each.value.public_ip, ".", "-")}",
+      AZ   = each.value.tags.AZ
     }
   )
 }
