@@ -3,34 +3,13 @@ locals {
   environment     = "staging"
   region          = "eu-west-1"
   cidr            = "10.0.0.0/16"
-  public_subnets  = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+  public_subnets  = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"] # 
   private_subnets = ["10.0.4.0/24", "10.0.5.0/24", "10.0.6.0/24"]
   name_prefix     = "${local.name}-${local.environment}"
 
   available_azs = data.aws_availability_zones.available.names
 
-  # # Example alternatives to how we could structure subnet values
-  # public_subnets_alt_1 = [
-  #   {
-  #     cidr = "10.0.1.0/24"
-  #     az   = "eu-west-1a"
-  #   },
-  #   {
-  #     cidr = "10.0.2.0/24"
-  #     az   = "eu-west-1b"
-  #   },
-  #   {
-  #     cidr = "10.0.3.0/24"
-  #     az   = "eu-west-1c"
-  #   }
-  # ]
-  # public_subnets_alt_2 = {
-  #   "10.0.1.0/24" = "eu-west-1a"
-  #   "10.0.2.0/24" = "eu-west-1b"
-  #   "10.0.3.0/24" = "eu-west-1c"
-  # }
-
-  # Auto assign AZs to subnets for this approach. See possible alternative approaches above.
+  # Auto assign AZs to subnets for this approach.
   # The modulo operator (%) cycles through the AZs when the number of subnets exceeds the number of AZs
   public_subnets_with_azs = {
     for i, cidr in local.public_subnets :
@@ -51,8 +30,8 @@ locals {
       az           = az
       private_cidr = cidr
       # Find a matching public subnet in the same AZ
-      # TODO: how does this handle failure, i.e. no matching az?
-      public_cidr = local.public_subnets_by_az[az]
+      # If none exists, we won't be able to create a NGW or route table for that private subnet, so we fail early with a precondition on the NGW resource.
+      public_cidr = lookup(local.public_subnets_by_az, az, null)
     }
   }
 
