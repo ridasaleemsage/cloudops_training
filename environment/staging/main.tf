@@ -6,28 +6,34 @@ resource "aws_vpc" "webapp" {
   tags = merge(
     local.base_tags,
     {
-      Name = replace("${local.name_prefix}.vpc", "/", ".")
+      Name = "${local.name_prefix}-vpc"
     }
   )
 }
 
 resource "aws_subnet" "public" {
-  for_each = toset(local.public_subnets)
+  for_each = local.public_subnets_with_azs
 
-  cidr_block = each.value
-  # The `element` function is used to wrap around the number of public subnets to ensure that the code does not break even 
-  # if the number of subnets exceeds the number of availability zones.
-  availability_zone       = element(data.aws_availability_zones.available.names, index(local.public_subnets, each.value))
   vpc_id                  = aws_vpc.webapp.id
+  cidr_block              = each.key
+  availability_zone       = each.value
   map_public_ip_on_launch = true
 
   tags = merge(
     local.base_tags,
     {
-      Name = "${local.name_prefix}.public.${each.value}.sn"
-      AZ   = element(data.aws_availability_zones.available.names, index(local.public_subnets, each.value))
+      Name = "${local.name_prefix}-public-sn-${replace(replace(each.value, ".", "-"), "/", "-")}"
+      AZ   = each.value
     }
   )
+  
+  # This precondition would likely be replaced with variable validation in the VPC module version
+  lifecycle {
+    precondition {
+      condition = length(local.public_subnets) >= length(local.private_subnets)
+      error_message = "Number of public subnets must be >= private subnets to support nat gateway creation. You specified ${length(local.private_subnets)} private subnets but only ${length(local.public_subnets)} public subnets."
+    }
+  }
 }
 
 resource "aws_internet_gateway" "public" {
@@ -36,7 +42,7 @@ resource "aws_internet_gateway" "public" {
   tags = merge(
     local.base_tags,
     {
-      Name = "${local.name_prefix}.${local.region}.igw"
+      Name = "${local.name_prefix}-igw-${local.region}"
     }
   )
 }
@@ -52,7 +58,7 @@ resource "aws_route_table" "public" {
   tags = merge(
     local.base_tags,
     {
-      Name = "${local.name_prefix}.public.${aws_internet_gateway.public.id}.rt"
+      Name = "${local.name_prefix}-public-rt"
     }
   )
 }
@@ -65,46 +71,58 @@ resource "aws_route_table_association" "public" {
 }
 
 resource "aws_subnet" "private" {
-  for_each = toset(local.private_subnets)
+  for_each = local.private_subnets_with_azs
 
-  cidr_block        = each.value
-  availability_zone = element(data.aws_availability_zones.available.names, index(local.private_subnets, each.value))
   vpc_id            = aws_vpc.webapp.id
+  cidr_block        = each.key
+  availability_zone = each.value
 
   tags = merge(
     local.base_tags,
     {
-      Name = "${local.name_prefix}.private.${each.value}.sn",
-      AZ   = element(data.aws_availability_zones.available.names, index(local.private_subnets, each.value))
+      Name = "${local.name_prefix}-private-sn-${replace(replace(each.value, ".", "-"), "/", "-")}",
+      AZ   = each.value
 
     }
   )
 }
 
-resource "aws_eip" "private" {
-  for_each = aws_subnet.public
-  domain   = "vpc"
+resource "aws_eip" "ngw" {
+  for_each = local.nat_gateways
+
+  domain = "vpc"
+
   tags = merge(
     local.base_tags,
     {
-      Name = "${local.name_prefix}.${each.value.availability_zone_id}.ngw.eip"
+      Name = "${local.name_prefix}-ngw-eip-${each.value.az}"
     }
   )
 }
 
 resource "aws_nat_gateway" "private" {
-  for_each = aws_subnet.public
+  for_each = local.nat_gateways
 
-  allocation_id = aws_eip.private[each.value.cidr_block].id
-  subnet_id     = each.value.id # Assuming you're associating it with a public subnet
+  allocation_id = aws_eip.ngw[each.key].id
+  subnet_id     = aws_subnet.public[each.value.public_cidr].id
 
   tags = merge(
     local.base_tags,
     {
-      Name = "${local.name_prefix}.${aws_eip.private[each.value.cidr_block].public_ip}.ngw",
-      AZ   = "${each.value.availability_zone}"
+      Name = "${local.name_prefix}-ngw-${each.key}",
+      AZ   = each.key
     }
   )
+
+  # Fail early if no public subnet available in this AZ.
+  # Prob overkill to validate this when we control and hardcode the subnet values here as locals, however it may be more useful when converting to a module later (this and/or variable validation)
+  lifecycle {
+    precondition {
+      condition = each.value.public_cidr != null
+      error_message = "Unable to create nat gateway for ${each.key} - no public subnet available in this AZ. Make sure number of public subnets >= private subnets."
+      
+    }
+  }
 
   # Ensure NAT Gateway is created after Internet Gateway
   depends_on = [aws_internet_gateway.public]
@@ -112,7 +130,8 @@ resource "aws_nat_gateway" "private" {
 
 resource "aws_route_table" "private" {
   for_each = aws_nat_gateway.private
-  vpc_id   = aws_vpc.webapp.id
+
+  vpc_id = aws_vpc.webapp.id
 
   route {
     cidr_block     = "0.0.0.0/0"
@@ -122,8 +141,8 @@ resource "aws_route_table" "private" {
   tags = merge(
     local.base_tags,
     {
-      Name = "${local.name_prefix}.private.nat.${each.value.public_ip}.rt",
-      AZ   = "${each.value.tags.AZ}"
+      Name = "${local.name_prefix}-private-rt-${local.nat_gateways[each.key].az}",
+      AZ   = local.nat_gateways[each.key].az
     }
   )
 }
@@ -131,11 +150,6 @@ resource "aws_route_table" "private" {
 resource "aws_route_table_association" "private" {
   for_each = aws_subnet.private
 
-  subnet_id = each.value.id
-
-  # Ensure both route tables and subnets share the same "Availablity Zone" tag 
-  route_table_id = lookup(local.route_table_map, each.value.tags["AZ"], null)
-
-  # This prevents errors if a route table isn't found for a subnet
-  depends_on = [aws_route_table.private]
+  subnet_id      = each.value.id
+  route_table_id = aws_route_table.private[each.value.availability_zone].id
 }
