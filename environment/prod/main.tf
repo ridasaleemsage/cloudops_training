@@ -26,11 +26,11 @@ resource "aws_subnet" "public" {
       AZ   = each.value
     }
   )
-  
+
   # This precondition would likely be replaced with variable validation in the VPC module version
   lifecycle {
     precondition {
-      condition = length(local.public_subnets) >= length(local.private_subnets)
+      condition     = length(local.public_subnets) >= length(local.private_subnets)
       error_message = "Number of public subnets must be >= private subnets to support nat gateway creation. You specified ${length(local.private_subnets)} private subnets but only ${length(local.public_subnets)} public subnets."
     }
   }
@@ -118,9 +118,9 @@ resource "aws_nat_gateway" "private" {
   # Prob overkill to validate this when we control and hardcode the subnet values here as locals, however it may be more useful when converting to a module later (this and/or variable validation)
   lifecycle {
     precondition {
-      condition = each.value.public_cidr != null
+      condition     = each.value.public_cidr != null
       error_message = "Unable to create nat gateway for ${each.key} - no public subnet available in this AZ. Make sure number of public subnets >= private subnets."
-      
+
     }
   }
 
