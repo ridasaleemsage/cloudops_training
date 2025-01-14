@@ -23,8 +23,7 @@ module "vpc" {
   environment = "staging"
 
   cidr                 = var.cidr
-  public_subnets       = var.public_subnets
-  private_subnets      = var.private_subnets
+  subnets              = var.subnets
   enable_dns_support   = var.enable_dns_support
   enable_dns_hostnames = var.enable_dns_hostnames
 }

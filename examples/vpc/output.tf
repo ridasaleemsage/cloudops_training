@@ -22,3 +22,11 @@ output "nat_gateways" {
   description = "List of NAT gateways in the VPC"
   value       = module.vpc.nat_gateways
 }
+
+output "private_subnets_obj" {
+  value = module.vpc.private_subnets_obj
+}
+output "public_subnets_obj" {
+  value = module.vpc.public_subnets_obj
+}
+

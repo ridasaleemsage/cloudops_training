@@ -9,8 +9,7 @@ module "vpc" {
   environment = local.environment
 
   cidr                 = local.cidr
-  public_subnets       = local.public_subnets
-  private_subnets      = local.private_subnets
+  subnets              = local.subnets
   enable_dns_support   = true
   enable_dns_hostnames = true
 }

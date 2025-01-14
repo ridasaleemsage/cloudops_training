@@ -17,23 +17,15 @@ resource "aws_subnet" "public" {
   vpc_id                  = aws_vpc.webapp.id
   cidr_block              = each.key
   availability_zone       = each.value
-  map_public_ip_on_launch = true
+  map_public_ip_on_launch = local.public_subnets.map_public_ip_on_launch
 
   tags = merge(
     local.base_tags,
     {
-      Name = "${local.name_prefix}-public-sn-${replace(replace(each.value, ".", "-"), "/", "-")}"
+      Name = "${local.name_prefix}-${local.public_subnets.type}-sn-${replace(replace(each.value, ".", "-"), "/", "-")}"
       AZ   = each.value
     }
   )
-
-  # This precondition would likely be replaced with variable validation in the VPC module version
-  lifecycle {
-    precondition {
-      condition     = length(var.public_subnets) >= length(var.private_subnets)
-      error_message = "Number of public subnets must be >= private subnets to support nat gateway creation. You specified ${length(var.private_subnets)} private subnets but only ${length(var.public_subnets)} public subnets."
-    }
-  }
 }
 
 resource "aws_internet_gateway" "public" {
@@ -58,7 +50,7 @@ resource "aws_route_table" "public" {
   tags = merge(
     local.base_tags,
     {
-      Name = "${local.name_prefix}-public-rt"
+      Name = "${local.name_prefix}-${local.public_subnets.type}-rt"
     }
   )
 }
@@ -80,9 +72,8 @@ resource "aws_subnet" "private" {
   tags = merge(
     local.base_tags,
     {
-      Name = "${local.name_prefix}-private-sn-${replace(replace(each.value, ".", "-"), "/", "-")}",
+      Name = "${local.name_prefix}-${local.private_subnets.type}-sn-${replace(replace(each.value, ".", "-"), "/", "-")}",
       AZ   = each.value
-
     }
   )
 }
@@ -114,16 +105,6 @@ resource "aws_nat_gateway" "private" {
     }
   )
 
-  # Fail early if no public subnet available in this AZ.
-  # Prob overkill to validate this when we control and hardcode the subnet values here as locals, however it may be more useful when converting to a module later (this and/or variable validation)
-  lifecycle {
-    precondition {
-      condition     = each.value.public_cidr != null
-      error_message = "Unable to create nat gateway for ${each.key} - no public subnet available in this AZ. Make sure number of public subnets >= private subnets."
-
-    }
-  }
-
   # Ensure NAT Gateway is created after Internet Gateway
   depends_on = [aws_internet_gateway.public]
 }
@@ -141,7 +122,7 @@ resource "aws_route_table" "private" {
   tags = merge(
     local.base_tags,
     {
-      Name = "${local.name_prefix}-private-rt-${local.nat_gateways[each.key].az}",
+      Name = "${local.name_prefix}-${local.private_subnets.type}-rt-${local.nat_gateways[each.key].az}",
       AZ   = local.nat_gateways[each.key].az
     }
   )
