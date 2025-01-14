@@ -42,3 +42,6 @@ terraform.rc
 
 # Ignore IntelliJ files
 .idea
+
+# Ignore .vscode folder
+.vscode/
