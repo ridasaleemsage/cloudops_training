@@ -43,7 +43,7 @@ variable "subnets" {
     {
       type                    = "public"
       cidr                    = ["10.0.1.0/24"]
-      availability_zone       = ["eu-west-1a"]
+      availability_zone       = ["eu-west-1b"]
       map_public_ip_on_launch = true
     },
     {

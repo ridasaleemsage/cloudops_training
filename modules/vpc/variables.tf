@@ -63,7 +63,8 @@ variable "subnets" {
   }
   # TBD: Add validation to ensure that each subnet type shares the same availability zones.
   validation {
-    condition     = alltrue([])
+    condition     = [for subnet in var.subnets :
+    sort(subnet.availability_zone) if subnet.type == "public"] == [for subnet in var.subnets : sort(subnet.availability_zone) if subnet.type == "private" ]
     error_message = "Each subnet type must share same availability zones."
   }
 }
