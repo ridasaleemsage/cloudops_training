@@ -26,45 +26,62 @@ variable "app_name" {
 variable "environment" {
   description = "The environment to deploy the resources"
   type        = string
-  default     = "dev"
+  default     = "staging"
+}
+variable "tags" {
+  description = "A map of tags to add in addition to the basic tags added by the module"
+  type        = map(string)
+  default     = {}
+}
+variable "instance_tenancy" {
+  description = "A tenancy option for instances launched into the VPC"
+  type        = string
+  default     = "default"
 }
 variable "subnets" {
   description = "Subnet object to create"
-  type = list(object({
-    type                    = string
-    cidr                    = list(string)
-    availability_zone       = list(string)
-    map_public_ip_on_launch = optional(bool)
+  type = map(list(
+    object({
+      cidr                    = string
+      availability_zone       = string
+      map_public_ip_on_launch = optional(bool)
+      tags                    = optional(map(string))
     })
+    )
   )
-  default = [
-    {
-      type                    = "public"
-      cidr                    = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
-      availability_zone       = ["eu-west-1a", "eu-west-1b", "eu-west-1c"]
-      map_public_ip_on_launch = true
-    },
-    {
-      type              = "private"
-      cidr              = ["10.0.4.0/24", "10.0.5.0/24", "10.0.6.0/24"]
-      availability_zone = ["eu-west-1a", "eu-west-1b", "eu-west-1c"]
-    }
-  ]
-  validation {
-    condition = alltrue([
-      for subnet in var.subnets :
-      length(subnet.cidr) == length(subnet.availability_zone)
-    ])
-    error_message = "Each subnet must have the same number of CIDR blocks and availability zones."
+  default = {
+    "public" = [
+      {
+        cidr                    = "10.0.1.0/24"
+        availability_zone       = "eu-west-1a"
+        map_public_ip_on_launch = true
+      }
+    ],
+    "private" = [
+      {
+        cidr              = "10.0.4.0/24"
+        availability_zone = "eu-west-1a"
+      }
+    ]
   }
+#   validation {
+#     condition = alltrue([
+#       for subnet in var.subnets :
+#       length(subnet.cidr) == length(subnet.availability_zone)
+#     ])
+#     error_message = "Each subnet obj must have the same number of CIDR blocks and availability zones."
+#   }
   validation {
-    condition     = length([for subnet in var.subnets : subnet.cidr if subnet.type == "public"]) >= length([for subnet in var.subnets : subnet.cidr if subnet.type == "private"])
-    error_message = "Number of public subnets must be >= private subnets to support nat gateway creation."
+    condition = length([for subnet_type, subnet in var.subnets : subnet if subnet_type == "public"]) >= length([for subnet_type, subnet in var.subnets : subnet if subnet_type == "private"])
+        error_message = "Number of public subnets must be >= private subnets to support nat gateway creation."
   }
-  # TBD: Add validation to ensure that each subnet type shares the same availability zones.
-  validation {
-    condition     = [for subnet in var.subnets :
-    sort(subnet.availability_zone) if subnet.type == "public"] == [for subnet in var.subnets : sort(subnet.availability_zone) if subnet.type == "private" ]
-    error_message = "Each subnet type must share same availability zones."
-  }
+#   validation {
+#     condition     = length([for subnet in var.subnets : subnet.cidr if subnet.key == "public"]) >= length([for subnet in var.subnets : subnet.cidr if subnet.key == "private"])
+#     error_message = "Number of public subnets must be >= private subnets to support nat gateway creation."
+#   }
+#   validation {
+#     condition = [for subnet in var.subnets :
+#     sort(subnet.availability_zone) if subnet.type == "public"] == [for subnet in var.subnets : sort(subnet.availability_zone) if subnet.type == "private"]
+#     error_message = "Both private and public subnet type must share same availability zones."
+#   }
 }

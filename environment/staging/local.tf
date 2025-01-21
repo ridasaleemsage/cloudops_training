@@ -3,19 +3,21 @@ locals {
   environment = "staging"
   region      = "eu-west-1"
   cidr        = "10.0.0.0/16"
-  subnets = [
+  subnets = {
+    "public" = [
     {
-      type                    = "public"
-      cidr                    = ["10.0.3.0/24"]
-      availability_zone       = ["eu-west-1b"]
+      cidr                    = "10.0.3.0/24"
+      availability_zone       = "eu-west-1b"
       map_public_ip_on_launch = true
-    },
-    {
-      type              = "private"
-      cidr              = ["10.0.4.0/24"]
-      availability_zone = ["eu-west-1b"]
     }
-  ]
+    ],
+    "private" = [
+    {
+      cidr              = "10.0.4.0/24"
+      availability_zone = "eu-west-1b"
+    }
+    ]
+  }
   name_prefix = "${local.name}-${local.environment}"
 
   base_tags = {
@@ -24,3 +26,5 @@ locals {
     Region      = local.region
   }
 }
+
+
