@@ -8,10 +8,12 @@ output "nat_gateways" {
   value       = local.nat_gateways
 }
 
-output "private_subnets_obj" {
+output "private_subnets" {
+  description = "List of private subnet objects in the VPC"
   value = local.private_subnets
 }
 
-output "public_subnets_obj" {
+output "public_subnets" {
+  description = "List of public subnet objects in the VPC"
   value = local.public_subnets
 }

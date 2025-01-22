@@ -13,16 +13,12 @@ locals {
       az           = subnet.availability_zone
       private_cidr = subnet.cidr
       public_cidr  = lookup(
-        { for public_subnet in var.subnets["public"] : public_subnet.availability_zone => public_subnet.cidr },
+        {for public_subnet in var.subnets["public"] : public_subnet.availability_zone => public_subnet.cidr},
         subnet.availability_zone,
         null
       )
     }
   }
-
-  # keep aws provider defaults in mind 
-  # check the defaults where needed or not
-  # create another branch for the changes 
 
   base_tags = {
     Application = local.name,
