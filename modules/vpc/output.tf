@@ -10,10 +10,10 @@ output "nat_gateways" {
 
 output "private_subnets" {
   description = "List of private subnet objects in the VPC"
-  value = local.private_subnets
+  value       = local.private_subnets
 }
 
 output "public_subnets" {
   description = "List of public subnet objects in the VPC"
-  value = local.public_subnets
+  value       = local.public_subnets
 }

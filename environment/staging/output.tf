@@ -10,10 +10,10 @@ output "nat_gateways" {
 
 output "private_subnets" {
   description = "List of private subnet objects in the VPC"
-  value = module.staging_vpc.private_subnets_obj
+  value       = module.staging_vpc.private_subnets_obj
 }
 
 output "public_subnets" {
   description = "List of public subnet objects in the VPC"
-  value = module.staging_vpc.public_subnets_obj
+  value       = module.staging_vpc.public_subnets_obj
 }

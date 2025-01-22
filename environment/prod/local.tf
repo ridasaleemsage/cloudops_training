@@ -25,15 +25,15 @@ locals {
         }
       },
       {
-        cidr                    = "10.0.5.0/24"
-        availability_zone       = "eu-west-1b"
+        cidr              = "10.0.5.0/24"
+        availability_zone = "eu-west-1b"
         tags = {
           Type = "private"
         }
       }
     ]
   }
-  
+
   name_prefix = "${local.name}-${local.environment}"
 
   base_tags = {

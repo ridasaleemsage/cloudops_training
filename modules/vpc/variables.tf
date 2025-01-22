@@ -37,12 +37,11 @@ variable "instance_tenancy" {
 }
 variable "subnets" {
   description = "Subnet object to create"
-  type = map(list(
-    object({
-      cidr                    = string
-      availability_zone       = string
-      map_public_ip_on_launch = optional(bool)
-      tags                    = optional(map(string))
+  type = map(list(object({
+    cidr                    = string
+    availability_zone       = string
+    map_public_ip_on_launch = optional(bool)
+    tags                    = optional(map(string))
     })
     )
   )
@@ -62,16 +61,12 @@ variable "subnets" {
     ]
   }
   validation {
-    condition = length([for subnet_type, subnet in var.subnets : subnet if subnet_type == "public"]) >= length([for subnet_type, subnet in var.subnets : subnet if subnet_type == "private"])
-        error_message = "Number of public subnets must be >= private subnets to support nat gateway creation."
+    condition     = length(var.subnets["public"]) >= length(var.subnets["private"])
+    error_message = "Number of public subnets must be greater than or equal to the number of private subnets to support NAT gateway creation."
   }
-#   validation {
-#     condition     = length([for subnet in var.subnets : subnet.cidr if subnet.key == "public"]) >= length([for subnet in var.subnets : subnet.cidr if subnet.key == "private"])
-#     error_message = "Number of public subnets must be >= private subnets to support nat gateway creation."
-#   }
-#   validation {
-#     condition = [for subnet in var.subnets :
-#     sort(subnet.availability_zone) if subnet.type == "public"] == [for subnet in var.subnets : sort(subnet.availability_zone) if subnet.type == "private"]
-#     error_message = "Both private and public subnet type must share same availability zones."
-#   }
+  #   validation {
+  #     condition = [for subnet in var.subnets :
+  #     sort(subnet.availability_zone) if subnet.type == "public"] == [for subnet in var.subnets : sort(subnet.availability_zone) if subnet.type == "private"]
+  #     error_message = "Both private and public subnet type must share same availability zones."
+  #   }
 }
