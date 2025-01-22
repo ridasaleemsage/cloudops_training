@@ -1,7 +1,6 @@
 variable "cidr" {
   description = "The CIDR block for the VPC"
   type        = string
-  default     = "10.0.0.0/16"
 }
 variable "enable_dns_hostnames" {
   description = "Indicates whether instances launched in the VPC get DNS hostnames"
@@ -21,12 +20,10 @@ variable "aws_region" {
 variable "app_name" {
   description = "The name of the application"
   type        = string
-  default     = "webapp"
 }
 variable "environment" {
   description = "The environment to deploy the resources"
   type        = string
-  default     = "staging"
 }
 variable "tags" {
   description = "A map of tags to add in addition to the basic tags added by the module"
@@ -64,13 +61,6 @@ variable "subnets" {
       }
     ]
   }
-#   validation {
-#     condition = alltrue([
-#       for subnet in var.subnets :
-#       length(subnet.cidr) == length(subnet.availability_zone)
-#     ])
-#     error_message = "Each subnet obj must have the same number of CIDR blocks and availability zones."
-#   }
   validation {
     condition = length([for subnet_type, subnet in var.subnets : subnet if subnet_type == "public"]) >= length([for subnet_type, subnet in var.subnets : subnet if subnet_type == "private"])
         error_message = "Number of public subnets must be >= private subnets to support nat gateway creation."
