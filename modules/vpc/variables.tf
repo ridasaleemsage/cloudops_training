@@ -45,21 +45,7 @@ variable "subnets" {
     })
     )
   )
-  default = {
-    "public" = [
-      {
-        cidr                    = "10.0.1.0/24"
-        availability_zone       = "eu-west-1a"
-        map_public_ip_on_launch = true
-      }
-    ],
-    "private" = [
-      {
-        cidr              = "10.0.4.0/24"
-        availability_zone = "eu-west-1a"
-      }
-    ]
-  }
+  default = {}
   validation {
     condition     = length(var.subnets["public"]) >= length(var.subnets["private"])
     error_message = "Number of public subnets must be greater than or equal to the number of private subnets to support NAT gateway creation."
