@@ -36,14 +36,11 @@ module "example_staging_vpc" {
     private = [
       {
         cidr              = "10.0.4.0/24"
-        availability_zone = "eu-west-1a"
+        availability_zone = "eu-west-1b"
         tags = {
           Type = "private"
         }
       }
     ]
-  }
-  tags = {
-    Type = "internal_module_vpc"
   }
 }

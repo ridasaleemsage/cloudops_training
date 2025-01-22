@@ -64,9 +64,8 @@ variable "subnets" {
     condition     = length(var.subnets["public"]) >= length(var.subnets["private"])
     error_message = "Number of public subnets must be greater than or equal to the number of private subnets to support NAT gateway creation."
   }
-  #   validation {
-  #     condition = [for subnet in var.subnets :
-  #     sort(subnet.availability_zone) if subnet.type == "public"] == [for subnet in var.subnets : sort(subnet.availability_zone) if subnet.type == "private"]
-  #     error_message = "Both private and public subnet type must share same availability zones."
-  #   }
+  validation {
+    condition = sort([for subnet in var.subnets["public"] : subnet.availability_zone]) == sort([for subnet in var.subnets["private"] : subnet.availability_zone])
+    error_message = "Both private and public subnet type must share same availability zones."
+    }
 }
