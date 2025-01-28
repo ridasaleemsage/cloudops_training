@@ -55,3 +55,7 @@ variable "subnets" {
     error_message = "Both private and public subnet type must share same availability zones."
   }
 }
+variable "s3_bucket" {
+  description = "The name of the S3 bucket to store the Terraform state file"
+  type        = string
+}
