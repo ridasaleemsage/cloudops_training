@@ -18,7 +18,7 @@ jobs:
         name: 'Terraform Plan'
         runs-on: ubuntu-latest
         env:
-            TF_WORKING_DIR: "./example/vpc"
+            TF_WORKING_DIR: "example/vpc"
 
         steps:
         - name: Checkout
@@ -29,7 +29,7 @@ jobs:
 
         - name: Terraform Init
           run: terraform init
-          working-directory: ${{ env.TF_WORKING_DIR }}
+          working-directory: examples/vpc
 
           env:
             AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
