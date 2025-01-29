@@ -10,6 +10,7 @@ on:
         branches:
             - main
             - develop
+            - vpc-module
     workflow_dispatch:
 
 jobs:
