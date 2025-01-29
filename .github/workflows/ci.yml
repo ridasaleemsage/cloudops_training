@@ -1,0 +1,133 @@
+name: Terraform CI/CD Pipeline
+
+on:
+    pull_request:
+        types: [opened, synchronize, reopened, edited, ready_for_review, review_requested, closed]
+    pull_request_review:
+        types: [submitted]
+
+    push:
+        branches:
+            - main
+            - develop
+    workflow_dispatch:
+
+jobs:
+    terraform-plan:
+        name: 'Terraform Plan'
+        runs-on: ubuntu-latest
+
+        steps:
+        - name: Checkout
+          uses: actions/checkout@v2
+
+        - name: Setup Terraform
+          uses: hashicorp/setup-terraform@v3
+
+        - name: Terraform Init
+          run: terraform init
+          env:
+            AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+         
+        - name: Terraform Formatting
+          id: fmt
+          run: terraform fmt -check
+
+        - name: Terraform Validate
+          id: validate
+          run: terraform validate
+
+        - name: Terraform Plan
+          id: plan
+          if: github.event_name == 'pull_request'
+          run: terraform plan -out=tfplan.binary
+          continue-on-error: true  
+          env:
+            AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+        
+        - name: Comment PR with Terraform Plan
+          uses: actions/github-script@v6
+          if: github.event_name == 'pull_request'
+          env:
+            PLAN: ${{ steps.plan.outputs.stdout }}
+          with: 
+            github-token: ${{ secrets.GITHUB_TOKEN }} 
+            script: |
+                const output = `#### Terraform Format and Style \`${{ steps.fmt.outcome }}\`
+                #### Terraform Validation \`${{ steps.validate.outcome }}\`
+                #### Terraform Plan \`${{ steps.plan.outcome }}\`
+    
+                <details><summary>Show Plan</summary>
+    
+                \`\`\`terraform\n
+                ${process.env.PLAN}
+                \`\`\`
+    
+                </details>
+    
+                *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+    
+                github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: output
+                })
+        
+        - name: Terraform Plan Status
+          if: steps.plan.outcome == 'failure'
+          run: exit 1
+
+    terraform-apply:
+        name: 'Terraform Apply'
+        needs: terraform-plan
+        if: github.event.pull_request.merged == true
+        runs-on: ubuntu-latest
+        steps:
+        - run: echo "The PR was Merged"
+
+        - name: Checkout
+          uses: actions/checkout@v2
+
+        - name: Setup Terraform
+          uses: hashicorp/setup-terraform@v3
+
+        - name: Terraform Init
+          run: terraform init
+          env:
+            AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+            
+        - name: Terraform Apply
+          run: terraform apply tfplan.binary
+          env:
+            AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+
+        - name: Comment PR with Terraform Apply Status
+          uses: actions/github-script@v6
+          env:
+            PLAN: ${{ steps.plan.outputs.stdout }}
+          with: 
+            github-token: ${{ secrets.GITHUB_TOKEN }} 
+            script: |
+                const output = `#### Terraform Apply. The plan has been applied to the environment.`
+                github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: output
+                })
+
+
+
+
+
+    # conventional commits
+    # task 2: environments, create spereate envs for dev, stage, prod
