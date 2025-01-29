@@ -25,6 +25,7 @@ module "example_staging_vpc" {
   cidr                 = "10.0.0.0/16"
   enable_dns_support   = true
   enable_dns_hostnames = true
+  s3_bucket            = "backend-tfstate"
   subnets = {
     public = [
       {
