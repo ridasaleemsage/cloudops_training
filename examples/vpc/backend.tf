@@ -3,7 +3,6 @@ terraform {
     bucket         = "backend-tfstate"
     key            = "examples/vpc/terraform.tfstate"
     region         = "eu-west-1"
-    profile        = "enplat-dev-admin"
     dynamodb_table = "backend-tflock"
     encrypt        = true
   }
