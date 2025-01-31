@@ -21,6 +21,7 @@ resource "aws_subnet" "public" {
 
   tags = merge(
     local.base_tags,
+    each.value.tags,
     {
       Name = "${local.name_prefix}-public-sn-${replace(replace(each.value.availability_zone, ".", "-"), "/", "-")}"
       AZ   = each.value.availability_zone
@@ -71,6 +72,7 @@ resource "aws_subnet" "private" {
 
   tags = merge(
     local.base_tags,
+    each.value.tags,
     {
       Name = "${local.name_prefix}-private-sn-${replace(replace(each.value.availability_zone, ".", "-"), "/", "-")}",
       AZ   = each.value.availability_zone
@@ -122,7 +124,7 @@ resource "aws_route_table" "private" {
   tags = merge(
     local.base_tags,
     {
-      Name = "${local.name_prefix}-private-rt-${local.nat_gateways[each.key].az}",
+      Name = "${local.name_prefix}-private-rt-${each.value.tags.AZ}",
       AZ   = local.nat_gateways[each.key].az
     }
   )

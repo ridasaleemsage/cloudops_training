@@ -12,7 +12,7 @@ provider "aws" {
   region  = var.aws_region
 }
 
-module "example_staging_vpc" {
+module "vpc" {
   # When using the module in your own templates, you will need to use a Git URL with a ref attribute that pins you
   # to a specific version of the module, such as the following example:
   # source = "git::git@github.com:sage-cloudops/terraform-aws-vpc.git//modules/vpc?ref=v0.0.1"
@@ -25,6 +25,7 @@ module "example_staging_vpc" {
   cidr                 = "10.0.0.0/16"
   enable_dns_support   = true
   enable_dns_hostnames = true
+  s3_bucket            = "backend_tfstate"
   subnets = {
     public = [
       {
@@ -38,7 +39,8 @@ module "example_staging_vpc" {
         cidr              = "10.0.4.0/24"
         availability_zone = "eu-west-1b"
         tags = {
-          Type = "private"
+          "Deployment" = "v1"
+          "Release"    = "1.0.0"
         }
       }
     ]

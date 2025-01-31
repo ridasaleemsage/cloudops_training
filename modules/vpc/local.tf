@@ -5,8 +5,8 @@ locals {
   cidr        = var.cidr
   name_prefix = "${local.name}-${local.environment}"
 
-  private_subnets = { for idx, subnet in var.subnets["private"] : subnet.cidr => subnet }
-  public_subnets  = { for idx, subnet in var.subnets["public"] : subnet.cidr => subnet }
+  private_subnets = { for subnet in var.subnets["private"] : subnet.cidr => subnet }
+  public_subnets  = { for subnet in var.subnets["public"] : subnet.cidr => subnet }
 
   nat_gateways = {
     for subnet in var.subnets["private"] : subnet.availability_zone => {
