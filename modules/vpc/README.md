@@ -19,8 +19,24 @@ module "vpc" {
   enable_dns_hostnames = true
 
   # Subnet configuration
-  public_subnets  = ["10.0.1.0/24", "10.0.2.0/24"]
-  private_subnets = ["10.0.3.0/24", "10.0.4.0/24"]
+  subnets = {
+    public = [
+      {
+        cidr                    = "10.0.1.0/24"
+        availability_zone       = "eu-west-1a"
+        map_public_ip_on_launch = true
+      }
+    ],
+    private = [
+      {
+        cidr              = "10.0.4.0/24"
+        availability_zone = "eu-west-1a"
+        tags = {
+          Type = "private"
+        }
+      }
+    ]
+  }
 
   # Tags for resources
   app_name        = "prod-vpc"
@@ -34,8 +50,9 @@ module "vpc" {
 * `source`: Specifies the URL of this module. Use the `//` syntax to target the subfolder containing this module incase of URL.  
 * `cidr`: Defines the CIDR block for the VPC.  
 * `environment`: Indicates the environment for this VPC, such as `production`, `staging`, or `development`.  
-* `public_subnets` & `private_subnets`: CIDR blocks for public and private subnets.  
+* `subnets`: Objects with CIDR blocks, availability zones, tags, and map_public_ip_on_launch for public and private subnets.  
 * `tags`: Key-value pairs to tag the resources.
+* `instance_tenancy`: A tenancy option for instances launched into the VPC - Default/Dedicated.
 
 See [variables.tf](variables.tf) for the full list of customizable inputs.
 
@@ -69,6 +86,11 @@ This module is designed to work across different environments. Here's an example
 │   │   ├── variables.tf
 │   │   ├── local.tf
 │   │   ├── provider.tf
+├── examples/
+│   ├── vpc/
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   ├── output.tf
 ├── modules/
 │   ├── vpc/
 │   │   ├── main.tf
