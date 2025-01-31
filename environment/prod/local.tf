@@ -22,14 +22,16 @@ locals {
         cidr              = "10.0.4.0/24"
         availability_zone = "eu-west-1a"
         tags = {
-          Type = "private"
+          Deployment = "v1"
+          Release    = "1.3.0"
         }
       },
       {
         cidr              = "10.0.5.0/24"
         availability_zone = "eu-west-1b"
         tags = {
-          Type = "private"
+          Deployment = "v1"
+          Release    = "1.3.0"
         }
       }
     ]
