@@ -1,7 +1,6 @@
 variable "cidr" {
   description = "The CIDR block for the VPC"
   type        = string
-  default     = "10.0.0.0/16"
 }
 variable "enable_dns_hostnames" {
   description = "Indicates whether instances launched in the VPC get DNS hostnames"
@@ -21,50 +20,42 @@ variable "aws_region" {
 variable "app_name" {
   description = "The name of the application"
   type        = string
-  default     = "webapp"
 }
 variable "environment" {
   description = "The environment to deploy the resources"
   type        = string
-  default     = "dev"
+}
+variable "tags" {
+  description = "A map of tags to add in addition to the basic tags added by the module"
+  type        = map(string)
+  default     = {}
+}
+variable "instance_tenancy" {
+  description = "A tenancy option for instances launched into the VPC"
+  type        = string
+  default     = "default"
 }
 variable "subnets" {
   description = "Subnet object to create"
-  type = list(object({
-    type                    = string
-    cidr                    = list(string)
-    availability_zone       = list(string)
+  type = map(list(object({
+    cidr                    = string
+    availability_zone       = string
     map_public_ip_on_launch = optional(bool)
+    tags                    = optional(map(string))
     })
+    )
   )
-  default = [
-    {
-      type                    = "public"
-      cidr                    = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
-      availability_zone       = ["eu-west-1a", "eu-west-1b", "eu-west-1c"]
-      map_public_ip_on_launch = true
-    },
-    {
-      type              = "private"
-      cidr              = ["10.0.4.0/24", "10.0.5.0/24", "10.0.6.0/24"]
-      availability_zone = ["eu-west-1a", "eu-west-1b", "eu-west-1c"]
-    }
-  ]
+  default = {}
   validation {
-    condition = alltrue([
-      for subnet in var.subnets :
-      length(subnet.cidr) == length(subnet.availability_zone)
-    ])
-    error_message = "Each subnet must have the same number of CIDR blocks and availability zones."
+    condition     = length(var.subnets["public"]) >= length(var.subnets["private"])
+    error_message = "Number of public subnets must be greater than or equal to the number of private subnets to support NAT gateway creation."
   }
   validation {
-    condition     = length([for subnet in var.subnets : subnet.cidr if subnet.type == "public"]) >= length([for subnet in var.subnets : subnet.cidr if subnet.type == "private"])
-    error_message = "Number of public subnets must be >= private subnets to support nat gateway creation."
+    condition     = sort([for subnet in var.subnets["public"] : subnet.availability_zone]) == sort([for subnet in var.subnets["private"] : subnet.availability_zone])
+    error_message = "Both private and public subnet type must share same availability zones."
   }
-  # TBD: Add validation to ensure that each subnet type shares the same availability zones.
-  validation {
-    condition     = [for subnet in var.subnets :
-    sort(subnet.availability_zone) if subnet.type == "public"] == [for subnet in var.subnets : sort(subnet.availability_zone) if subnet.type == "private" ]
-    error_message = "Each subnet type must share same availability zones."
-  }
+}
+variable "s3_bucket" {
+  description = "The name of the S3 bucket to store the Terraform state file"
+  type        = string
 }

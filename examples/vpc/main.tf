@@ -19,11 +19,30 @@ module "vpc" {
   source = "../../modules/vpc"
 
   aws_region  = var.aws_region
-  app_name    = var.app_name
+  app_name    = "enplat"
   environment = "staging"
 
-  cidr                 = var.cidr
-  subnets              = var.subnets
-  enable_dns_support   = var.enable_dns_support
-  enable_dns_hostnames = var.enable_dns_hostnames
+  cidr                 = "10.0.0.0/16"
+  enable_dns_support   = true
+  enable_dns_hostnames = true
+  s3_bucket            = "backend_tfstate"
+  subnets = {
+    public = [
+      {
+        cidr                    = "10.0.1.0/24"
+        availability_zone       = "eu-west-1b"
+        map_public_ip_on_launch = true
+      }
+    ],
+    private = [
+      {
+        cidr              = "10.0.4.0/24"
+        availability_zone = "eu-west-1b"
+        tags = {
+          "Deployment" = "v1"
+          "Release"    = "1.0.0"
+        }
+      }
+    ]
+  }
 }

@@ -12,18 +12,19 @@ resource "aws_vpc" "webapp" {
 }
 
 resource "aws_subnet" "public" {
-  for_each = local.public_subnets_with_azs
+  for_each = local.public_subnets
 
   vpc_id                  = aws_vpc.webapp.id
-  cidr_block              = each.key
-  availability_zone       = each.value
-  map_public_ip_on_launch = local.public_subnets.map_public_ip_on_launch
+  cidr_block              = each.value.cidr
+  availability_zone       = each.value.availability_zone
+  map_public_ip_on_launch = each.value.map_public_ip_on_launch
 
   tags = merge(
     local.base_tags,
+    each.value.tags,
     {
-      Name = "${local.name_prefix}-${local.public_subnets.type}-sn-${replace(replace(each.value, ".", "-"), "/", "-")}"
-      AZ   = each.value
+      Name = "${local.name_prefix}-public-sn-${replace(replace(each.value.availability_zone, ".", "-"), "/", "-")}"
+      AZ   = each.value.availability_zone
     }
   )
 }
@@ -50,7 +51,7 @@ resource "aws_route_table" "public" {
   tags = merge(
     local.base_tags,
     {
-      Name = "${local.name_prefix}-${local.public_subnets.type}-rt"
+      Name = "${local.name_prefix}-public-rt"
     }
   )
 }
@@ -63,17 +64,18 @@ resource "aws_route_table_association" "public" {
 }
 
 resource "aws_subnet" "private" {
-  for_each = local.private_subnets_with_azs
+  for_each = local.private_subnets
 
   vpc_id            = aws_vpc.webapp.id
-  cidr_block        = each.key
-  availability_zone = each.value
+  cidr_block        = each.value.cidr
+  availability_zone = each.value.availability_zone
 
   tags = merge(
     local.base_tags,
+    each.value.tags,
     {
-      Name = "${local.name_prefix}-${local.private_subnets.type}-sn-${replace(replace(each.value, ".", "-"), "/", "-")}",
-      AZ   = each.value
+      Name = "${local.name_prefix}-private-sn-${replace(replace(each.value.availability_zone, ".", "-"), "/", "-")}",
+      AZ   = each.value.availability_zone
     }
   )
 }
@@ -122,7 +124,7 @@ resource "aws_route_table" "private" {
   tags = merge(
     local.base_tags,
     {
-      Name = "${local.name_prefix}-${local.private_subnets.type}-rt-${local.nat_gateways[each.key].az}",
+      Name = "${local.name_prefix}-private-rt-${each.value.tags.AZ}",
       AZ   = local.nat_gateways[each.key].az
     }
   )

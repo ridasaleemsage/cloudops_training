@@ -12,4 +12,7 @@ module "vpc" {
   subnets              = local.subnets
   enable_dns_support   = true
   enable_dns_hostnames = true
+  s3_bucket            = local.s3_bucket
+
+  tags = local.base_tags
 }
